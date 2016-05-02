@@ -11,7 +11,7 @@
 # Set a default pager
 PAGER=${PAGER:-more}
 
-require_root() 
+require_root()
 {
   UTEST="`whoami`"
   if [ "$UTEST" != "root" ] ; then
@@ -50,7 +50,7 @@ Type in help <command> for information and usage about that command
   replicate - Manage replication tasks
         set - Set lpreserver options
         get - Get list of lpreserver options
-     status - List datasets, along with last snapshot / replication date 
+     status - List datasets, along with last snapshot / replication date
 __EOF__
 };
 
@@ -63,7 +63,7 @@ Manage Life-Preserver replication tasks
 
 Replication uses ZFS to send your snapshots to a remote system which also has
 a ZFS pool, such as FreeNAS or another PC-BSD system. The <hostdataset> must
-also be scheduled for snapshots for replication to occur. 
+also be scheduled for snapshots for replication to occur.
 
 On the remote system, you will need to have created the <remotedataset>
 beforehand.
@@ -89,7 +89,7 @@ Available subcommands:
          list - List replication targets
        remove - Remove a replication target
           run - Start a replication manually
-    saveiscsi - Save the iSCSI config data / GELI key
+    saveiscsi - Save the iSCSI config data / GELI key / OpenSSL key
       exclude - Exclude datasets from replication
     rmexclude - Remove datasets from exclude list for replication
   listexclude - List excluded datasets from replication
@@ -99,7 +99,7 @@ Available subcommands:
 add options:
 
 	add <remotehost> <user> <port> <hostdataset> <remotedataset> <time>
-	
+
 	add iscsi <*.lps file> <hostdataset> <time> [geli key]
 
 	add iscsi <*.lpiscsi file> <hostdataset> <time> [password file]
@@ -112,14 +112,14 @@ add options:
 	 10min= Replicate every 10 minutes
 	manual= Only replicate when requested by user
 
-	Example 1: 
+	Example 1:
 
 	add freenas.8343 backupuser 22 tank1 tankbackup/backups sync
 
 	Will schedule replication of tank1 to tankbackup/backups with
 	each snapshot
 
-	Example 2: 
+	Example 2:
 
 	add freenas.8343 backupuser 22 tank1 tankbackup/backups 22
 
@@ -162,9 +162,9 @@ init options:
 remove options:
 
 	remove <dataset> <target host>
-	
+
 	Remove a replication task indicated by <dataset>
-        Use 'replicate list' for a list of IDs. 
+        Use 'replicate list' for a list of IDs.
 
 run options:
 
@@ -175,6 +175,7 @@ run options:
 saveiscsi options:
 
 	saveiscsi <localdataset/zpool> <target host> [password file]
+	saveiscsi geli <localdataset/zpool> <target host> [password file]
 
 	Creates a GELI encrypted file, which contains all the iSCSI connection
 	information and GELI key for the replication target. Will prompt for
@@ -182,6 +183,15 @@ saveiscsi options:
 
 	This file can then be used with the "replicate add" command to import
 	the backup zpool on another system or from the PC-BSD install media.
+
+	saveiscsi openssl <localdataset/zpool> <target host> <key file>
+
+    Creates an OpenSSL public key encrypted file, which contains all the iSCSI
+    connection information and GELI key for the replication target.
+
+    This file can be decrypted with the appropriate private key and then used
+    with the "replicate add" command to import the backup zpool on another
+    system or from the PC-BSD install media.
 
 exclude options:
 
@@ -210,7 +220,7 @@ rmexclude options:
 	Remove excluded dataset tank1/tmp and tank1/var/tmp on dataset tank1
 	for replication.
 
-	Dataset tank1/tmp and tank1/var/tmp on dataset tank1 are no longer excluded 
+	Dataset tank1/tmp and tank1/var/tmp on dataset tank1 are no longer excluded
 	from replication.
 
 listexclude options:
@@ -234,7 +244,7 @@ Examples:
 
   # lpreserver replicate run tank1 freenas.example.org
 
-  
+
   # lpreserver replicate init tank1 freenas.example.org
 
 " | $PAGER
@@ -259,15 +269,15 @@ Config options
       email - Set the e-mail address to receive notifications
 		This will require that the \"mail\" command is setup for outgoing mail
 
-  emailopts - (ALL/WARN/ERROR) 
+  emailopts - (ALL/WARN/ERROR)
 	 	  ALL - Send mail for every snapshot, plus warnings and errors
 		 WARN - Send mail for warnings and errors (Default)
 		ERROR - Send mail for errors only
 
-  recursive - (ON/OFF) 
+  recursive - (ON/OFF)
 		   ON - Will create / destroy snapshots recursively, for all children of
 			a target zpool/dataset. (Default)
-		  OFF - Will only create / destroy snapshots on the specified dataset.  
+		  OFF - Will only create / destroy snapshots on the specified dataset.
 
 pruneremote - (ON/OFF)
 		   ON - During replication this will prune remote datasets on destination
@@ -597,7 +607,7 @@ case "$1" in
          esac  ;;
 
     get) require_root
-	 # Display our options	
+	 # Display our options
 	 title
 	 echo "      Recursive mode: $RECURMODE"
 	 echo "   Prune remote mode: $PRUNEREMOTEMODE"
@@ -608,24 +618,24 @@ case "$1" in
          ;;
 
     set) require_root
-	 OPT="${2}" 
+	 OPT="${2}"
 
 	 case $OPT in
         emailopts) case $3 in
-		  ALL|WARN|ERROR) echo "E-Mail mode set to: $3" 
+		  ALL|WARN|ERROR) echo "E-Mail mode set to: $3"
 			          echo "$3" > ${DBDIR}/emaillevel ;;
 		     *) exit_err "Unknown option" ;;
 		   esac
 		   ;;
-            email) echo "Setting email notification to: $3" 
+            email) echo "Setting email notification to: $3"
 	           echo "$3" > ${DBDIR}/emails ;;
            duwarn) if [ ! $(is_num "$3") ] ; then exit_err "Invalid number, must be 0-99"; fi
-		   echo "Setting disk warning capacity to: ${3}%" 
+		   echo "Setting disk warning capacity to: ${3}%"
 	           echo "$3" > ${DBDIR}/duwarn ;;
         recursive) case $3 in
-		  OFF|Off|off)  echo "Recursive mode disabled" 
+		  OFF|Off|off)  echo "Recursive mode disabled"
 			        touch ${DBDIR}/recursive-off ;;
-		     ON|On|on)  echo "Recursive mode enabled" 
+		     ON|On|on)  echo "Recursive mode enabled"
 			        rm ${DBDIR}/recursive-off 2>/dev/null ;;
 		     *) exit_err "Unknown option" ;;
 		   esac
@@ -732,8 +742,8 @@ case "$1" in
          ;;
  replicate) shift
 	    case ${1} in
-		add) require_root ; 
-		     if [ "$2" = "iscsi" ] ; then 
+		add) require_root ;
+		     if [ "$2" = "iscsi" ] ; then
                         if ! isZFSvalid "$4"; then
                           exit_err "${4} is not a valid dataset!"
                         fi
@@ -765,11 +775,17 @@ case "$1" in
                         rem_rep_task "$2" "$3"
                         echo "Removed replication task for dataset $2, target host $3"
                         ;;
-		 run) require_root ; 
+		 run) require_root ;
 	  	      ${PROGDIR}/backend/runrep.sh "$2" "$3"
 		      exit $?
 		      ;;
-		saveiscsi) require_root ; save_iscsi_zpool_data "$2" "$3" "$4" ;;
+		saveiscsi) require_root ;
+                   if [ "$2" = "openssl" -o "$2" = "geli" ]; then
+                     save_iscsi_zpool_data "$2" "$3" "$4" "$5"
+                   else
+                     save_iscsi_zpool_data "geli" "$2" "$3" "$4"
+                   fi
+                   ;;
              exclude) require_root ;
 		      DATASET="${2}"
                       if ! isZFSvalid "$DATASET"; then
